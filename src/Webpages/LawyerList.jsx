@@ -36,12 +36,10 @@ const LawyerList = () => {
   }
 
   const fetchLawyerList = async () => {
-    const userId = user._id
     try {
       const response = await axios.get(
         `${api}/api/solve_litigation/message/lawyer-list`,
         {
-          params: { userId },
           headers: {
             Authorization: `Bearer ${sessionStorage.getItem('token')}`,
           },
