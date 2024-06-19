@@ -97,16 +97,16 @@ const Chat = () => {
       setAttachment(null)
       setAttachmentName('')
 
-      await axios.post(
-        `${api}/api/solve_litigation/message/send-message`,
-        formData,
-        {
-          headers: {
-            'Content-Type': 'multipart/form-data',
-            Authorization: `Bearer ${sessionStorage.getItem('token')}`,
-          },
-        }
-      )
+      // await axios.post(
+      //   `${api}/api/solve_litigation/message/send-message`,
+      //   formData,
+      //   {
+      //     headers: {
+      //       'Content-Type': 'multipart/form-data',
+      //       Authorization: `Bearer ${sessionStorage.getItem('token')}`,
+      //     },
+      //   }
+      // )
 
       if (socket) {
         socket.emit('sendMessage', {
