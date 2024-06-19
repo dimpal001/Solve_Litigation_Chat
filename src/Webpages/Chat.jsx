@@ -97,23 +97,9 @@ const Chat = () => {
       setAttachment(null)
       setAttachmentName('')
 
-      // await axios.post(
-      //   `${api}/api/solve_litigation/message/send-message`,
-      //   formData,
-      //   {
-      //     headers: {
-      //       'Content-Type': 'multipart/form-data',
-      //       Authorization: `Bearer ${sessionStorage.getItem('token')}`,
-      //     },
-      //   }
-      // )
-
       if (socket) {
-        socket.emit('sendMessage', {
-          from: user._id,
-          to: userId,
-          text: message,
-          attachment: attachmentName,
+        socket.emit('sendAttachment', {
+          formData,
         })
       }
     } catch (error) {
