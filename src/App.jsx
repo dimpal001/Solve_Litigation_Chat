@@ -1,8 +1,8 @@
 import { BrowserRouter, Route, Routes } from 'react-router-dom'
 import Chat from './Webpages/Chat'
 import LawyerList from './Webpages/LawyerList'
-import LawyerProfile from './Webpages/LawyerProfile'
 import ChatList from './Webpages/ChatList'
+import UserProfile from './Webpages/UserProfile'
 
 const sampleLawyer = {
   name: 'John Doe',
@@ -22,8 +22,8 @@ const App = () => {
           <Route path='/lawyer' element={<ChatList />} />
           <Route path='/chat/:userId' element={<Chat />} />
           <Route
-            path='/l-profile'
-            element={<LawyerProfile lawyer={sampleLawyer} />}
+            path='/profile/:userId'
+            element={<UserProfile lawyer={sampleLawyer} />}
           />
         </Routes>
       </BrowserRouter>

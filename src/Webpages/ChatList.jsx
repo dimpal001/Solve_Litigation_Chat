@@ -46,7 +46,8 @@ const ChatList = () => {
 
         navigate('/')
       } else {
-        window.location.href = 'https://www.chat.solvelitigation.com'
+        window.location.href = 'https://chat.solvelitigation.com'
+        // window.location.href = 'http://localhost:5174'
         return
       }
     }
