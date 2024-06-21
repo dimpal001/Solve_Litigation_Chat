@@ -87,7 +87,7 @@ const Chat = () => {
         from: user._id,
         to: userId,
         text: message,
-        attachment: attachmentName,
+        attachment: attachment,
         createdAt: new Date(),
       }
 
@@ -98,8 +98,11 @@ const Chat = () => {
       setAttachmentName('')
 
       if (socket) {
-        socket.emit('sendAttachment', {
-          formData,
+        socket.emit('sendMessage', {
+          from: user._id,
+          to: userId,
+          text: message,
+          attachment: attachmentName,
         })
       }
     } catch (error) {
