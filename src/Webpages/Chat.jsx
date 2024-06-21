@@ -26,8 +26,8 @@ const Chat = () => {
   }
 
   useEffect(() => {
-    // const newSocket = io('http://localhost:3000', {
-    const newSocket = io('https://api.solvelitigation.com', {
+    const newSocket = io('http://localhost:3000', {
+      // const newSocket = io('https://api.solvelitigation.com', {
       query: { userId: user._id },
     })
     newSocket.emit('register', user._id)
