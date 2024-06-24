@@ -1,14 +1,13 @@
 import { useEffect, useState, useContext, useRef } from 'react'
-import { useParams, Link } from 'react-router-dom'
 import io from 'socket.io-client'
 import axios from 'axios'
 import { SendIcon } from '../Components/Customs'
 import { api } from '../Components/Apis'
 import { UserContext } from '../UserContext'
-import UserImg from '../assets/user.svg'
+import UserImg from '../assets/profile.svg'
+import { Link } from 'react-router-dom'
 
-const Chat = () => {
-  const { userId } = useParams()
+const Chat = ({ userId, onBackClick }) => {
   const [message, setMessage] = useState('')
   const [toUser, setToUser] = useState('')
   const [messages, setMessages] = useState([])
@@ -26,8 +25,9 @@ const Chat = () => {
   }
 
   useEffect(() => {
-    const newSocket = io('http://localhost:3000', {
-      // const newSocket = io('https://api.solvelitigation.com', {
+    // const newSocket = io('http://192.168.1.24:3000', {
+    // const newSocket = io('http://localhost:3000', {
+    const newSocket = io('https://api.solvelitigation.com', {
       query: { userId: user._id },
     })
     newSocket.emit('register', user._id)
@@ -40,6 +40,10 @@ const Chat = () => {
     newSocket.on('receiveMessage', (message) => {
       setMessages((prevMessages) => [...prevMessages, message])
       scrollToBottom()
+    })
+
+    newSocket.on('refreshMessage', () => {
+      fetchMessages(userId)
     })
 
     return () => {
@@ -87,7 +91,7 @@ const Chat = () => {
         from: user._id,
         to: userId,
         text: message,
-        attachment: attachment,
+        attachment: attachment ? attachmentName : null,
         createdAt: new Date(),
       }
 
@@ -97,13 +101,22 @@ const Chat = () => {
       setAttachment(null)
       setAttachmentName('')
 
-      if (socket) {
-        socket.emit('sendMessage', {
-          from: user._id,
-          to: userId,
-          text: message,
-          attachment: attachmentName,
-        })
+      if (attachment) {
+        await axios.post(
+          `${api}/api/solve_litigation/message/send-attachment`,
+          formData,
+          {
+            headers: {
+              'Content-Type': 'multipart/form-data',
+              Authorization: `Bearer ${sessionStorage.getItem('token')}`,
+            },
+          }
+        )
+        fetchMessages(userId)
+      } else {
+        if (socket) {
+          socket.emit('sendMessage', newMessage)
+        }
       }
     } catch (error) {
       console.error('Error sending message:', error)
@@ -113,8 +126,10 @@ const Chat = () => {
   const handleFileChange = (e) => {
     const file = e.target.files[0]
     if (file) {
+      const newAttachmentName = file.name
       setAttachment(file)
-      setAttachmentName(file.name)
+      setAttachmentName(newAttachmentName)
+      console.log('File Name:', newAttachmentName)
     }
   }
 
@@ -148,149 +163,158 @@ const Chat = () => {
   }
 
   return (
-    <div className='container mx-auto lg:pt-5 lg:px-[180px]'>
-      <div className='flex border md:rounded-3xl h-[670px] flex-col'>
-        {/* Chat Header */}
-        <div className='flex items-center justify-between border-b border-gray-200 p-4'>
-          <div className='flex items-center space-x-4'>
-            <div>
-              <Link to={`/profile/${userId}`}>
-                <div className='flex group items-center gap-2'>
-                  <img src={UserImg} className='w-[40px]' alt='User Avatar' />
-                  <div className='font-semibold group-hover:text-primary group-hover:underline'>
-                    <p>{toUser.fullName} </p>
-                    <p className='text-sm font-light'>
-                      {toUser.speciality} Civil Lawyer
-                    </p>
-                    {/* Display user name or any identifier */}
-                  </div>
+    <div className='flex flex-col h-full'>
+      {/* Chat Header */}
+      <div className='flex items-center justify-between border-b border-gray-200 p-4 sticky top-0 bg-white z-10'>
+        <div className='flex items-center space-x-4'>
+          <div>
+            <Link to={`/profile/${userId}`} className='cursor-pointer'>
+              <div className='flex group items-center gap-2'>
+                <img src={UserImg} className='w-[40px]' alt='User Avatar' />
+                <div className='font-semibold group-hover:text-primary'>
+                  <p>{toUser.fullName}</p>
+                  <p className='text-sm font-light'>{toUser.speciality}</p>
                 </div>
-              </Link>
-            </div>
-          </div>
-        </div>
-
-        {/* Chat Messages */}
-        <div className='flex-1 p-4 space-y-1 overflow-y-auto'>
-          <p className='text-gray-500 italic text-center'>
-            {messages.length === 0 && `Start messaging with ${toUser.fullName}`}
-          </p>
-          {messages.map((msg, index) => (
-            <div
-              key={index}
-              className={`flex relative ${
-                msg.from === user._id ? 'justify-end' : 'justify-start'
-              }`}
-            >
-              <div
-                className={
-                  msg.from === user._id
-                    ? 'bg-blue-500 text-white p-2 rounded-se-none rounded-lg'
-                    : 'bg-gray-200 p-2 rounded-lg rounded-ss-none'
-                }
-                style={{ maxWidth: '92%', wordWrap: 'break-word' }}
-                onMouseEnter={() => toggleDeleteMenu(index)}
-                onMouseLeave={() => toggleDeleteMenu(null)}
-              >
-                <div className='text-sm'>{msg.text}</div>
-                {msg.attachment && (
-                  <div className='bg-blue-900 text-white rounded-se-none rounded-lg p-2'>
-                    <strong>Attachment:</strong>{' '}
-                    <a
-                      href={`${api}/api/solve_litigation/message/download/${msg.attachment}`}
-                      target='_blank'
-                      rel='noopener noreferrer'
-                    >
-                      {msg.attachment}
-                    </a>
-                  </div>
-                )}
-                {deleteMenuOpen === index && msg.from === user._id && (
-                  <div className='absolute top-0 right-0 bg-white border rounded shadow-md px-2'>
-                    <button
-                      onClick={() => handleDeleteMessage(msg._id)}
-                      className='text-red-500'
-                    >
-                      Delete
-                    </button>
-                  </div>
-                )}
               </div>
-            </div>
-          ))}
-          <div ref={messagesEndRef} />
-        </div>
-
-        {/* Input Field */}
-        {attachment && (
-          <div className='flex bg-gray-200 min-w-[50px] px-4 py-2 items-center space-x-2'>
-            <span className='bg-blue-500 p-2 rounded-lg'>{attachmentName}</span>
-            <button
-              type='button'
-              onClick={handleRemoveAttachment}
-              className='text-red-500'
-            >
-              X
-            </button>
+            </Link>
           </div>
-        )}
-        <div className='border-t w-full justify-center border-gray-200 p-4 flex items-center space-x-4'>
-          <form
-            className='w-full flex justify-center gap-3'
-            onSubmit={sendMessage}
+        </div>
+        <div>
+          <div>
+            <p
+              onClick={onBackClick}
+              title='Close the chat'
+              className='text-error cursor-pointer'
+            >
+              Close
+            </p>
+          </div>
+        </div>
+      </div>
+
+      {/* Chat Messages */}
+      <div className='flex-1 p-4 space-y-1 overflow-y-auto'>
+        <p className='text-gray-500 italic text-center'>
+          {messages.length === 0 && `Start messaging with ${toUser.fullName}`}
+        </p>
+        {messages.map((msg, index) => (
+          <div
+            key={index}
+            className={`flex relative ${
+              msg.from === user._id ? 'justify-end' : 'justify-start'
+            }`}
           >
-            <div className='flex justify-center items-center'>
-              <label htmlFor='fileInput'>
-                <svg
-                  fill='#000000'
-                  viewBox='0 0 24 24'
-                  id='attachment-2'
-                  data-name='Flat Line'
-                  xmlns='http://www.w3.org/2000/svg'
-                  className='icon flat-line cursor-pointer h-9 max-md:h-7'
-                >
-                  <g id='SVGRepo_bgCarrier' strokeWidth='0'></g>
-                  <g
-                    id='SVGRepo_tracerCarrier'
-                    strokeLinecap='round'
-                    strokeLinejoin='round'
-                  ></g>
-                  <g id='SVGRepo_iconCarrier'>
-                    <path
-                      id='primary'
-                      style={{
-                        fill: 'none',
-                        stroke: '#0052cc',
-                        strokeLinecap: 'round',
-                        strokeLinejoin: 'round',
-                        strokeWidth: 2,
-                      }}
-                      d='M6,10v5a6,6,0,0,0,6,6h0a6,6,0,0,0,6-6V7a4,4,0,0,0-4-4h0a4,4,0,0,0-4,4v8a2,2,0,0,0,2,2h0a2,2,0,0,0,2-2V7'
-                    ></path>
-                  </g>
-                </svg>
-              </label>
+            <div
+              className={
+                msg.from === user._id
+                  ? 'bg-blue-500 text-white p-2 rounded-se-none rounded-lg'
+                  : 'bg-gray-200 p-2 rounded-lg rounded-ss-none'
+              }
+              style={{ maxWidth: '92%', wordWrap: 'break-word' }}
+              onMouseEnter={() => toggleDeleteMenu(index)}
+              onMouseLeave={() => toggleDeleteMenu(null)}
+            >
+              <div className='text-sm'>{msg.text}</div>
+              {msg.attachment && (
+                <div className='bg-blue-900 text-white rounded-se-none rounded-lg p-2'>
+                  <strong>Attachment:</strong>{' '}
+                  <a
+                    href={`${api}/api/solve_litigation/message/download/${msg.attachment}`}
+                    target='_blank'
+                    rel='noopener noreferrer'
+                  >
+                    {msg.attachment}
+                  </a>
+                </div>
+              )}
+              {deleteMenuOpen === index && msg.from === user._id && (
+                <div className='absolute top-0 right-0 bg-white border rounded shadow-md px-2'>
+                  <button
+                    onClick={() => handleDeleteMessage(msg._id)}
+                    className='text-red-500'
+                  >
+                    Delete
+                  </button>
+                </div>
+              )}
             </div>
+          </div>
+        ))}
+        <div ref={messagesEndRef} />
+      </div>
+
+      {/* Input Field */}
+      <div className='border-t w-full justify-center border-gray-200 p-4 flex items-center space-x-4'>
+        <form
+          className='w-full flex justify-between gap-3'
+          onSubmit={sendMessage}
+        >
+          <div className='flex justify-center items-center'>
+            <label htmlFor='fileInput'>
+              <svg
+                fill='#000000'
+                viewBox='0 0 24 24'
+                id='attachment-2'
+                data-name='Flat Line'
+                xmlns='http://www.w3.org/2000/svg'
+                className='icon flat-line cursor-pointer h-9 max-md:h-7'
+              >
+                <g id='SVGRepo_bgCarrier' strokeWidth='0'></g>
+                <g
+                  id='SVGRepo_tracerCarrier'
+                  strokeLinecap='round'
+                  strokeLinejoin='round'
+                ></g>
+                <g id='SVGRepo_iconCarrier'>
+                  <path
+                    id='primary'
+                    style={{
+                      fill: 'none',
+                      stroke: '#0052cc',
+                      strokeLinecap: 'round',
+                      strokeLinejoin: 'round',
+                      strokeWidth: 2,
+                    }}
+                    d='M6,10v5a6,6,0,0,0,6,6h0a6,6,0,0,0,6-6V7a4,4,0,0,0-4-4h0a4,4,0,0,0-4,4v8a2,2,0,0,0,2,2h0a2,2,0,0,0,2-2V7'
+                  ></path>
+                </g>
+              </svg>
+            </label>
+          </div>
+          {attachment ? (
+            <div className='flex w-full min-w-[50px] px-4 py-2 items-center space-x-2'>
+              <span className='bg-blue-500 p-2 rounded-lg'>
+                {attachmentName}
+              </span>
+              <button
+                type='button'
+                onClick={handleRemoveAttachment}
+                className='text-red-500'
+              >
+                X
+              </button>
+            </div>
+          ) : (
             <textarea
-              autoFocus
+              // autoFocus
               placeholder='Enter message...'
               rows={1}
               className='w-full bg-blue-100 p-3 focus:outline-none px-5 rounded-2xl'
               value={message}
               onChange={(e) => setMessage(e.target.value)}
             ></textarea>
+          )}
 
-            <input
-              id='fileInput'
-              type='file'
-              className='hidden'
-              onChange={handleFileChange}
-            />
-            <button type='submit'>
-              <SendIcon className='h-6 w-6 text-gray-500 rotate-90 cursor-pointer' />
-            </button>
-          </form>
-        </div>
+          <input
+            id='fileInput'
+            type='file'
+            className='hidden'
+            onChange={handleFileChange}
+          />
+          <button type='submit'>
+            <SendIcon className='h-6 w-6 text-gray-500 rotate-90 cursor-pointer' />
+          </button>
+        </form>
       </div>
     </div>
   )
