@@ -1,8 +1,26 @@
-# React + Vite
+# Solve Litigation Chat Application 
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+This repository contains the chat application code for the **Solve Litigation** platform, which simplifies chatting system between client and solve litigation legal adviser.
 
-Currently, two official plugins are available:
+## Website
+[Visit Solve Litigation](https://solvelitigation.com)
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react/README.md) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+## Technology Stack
+- **React** with **Vite** for fast development
+- **Tailwind CSS** for styling
+- **Axios** for API integration
+- **JWT** for session management
+- **Node.js** (Backend - separate repo)
+
+## Features
+- Chatting with clients
+- Manage client materials
+- Responsive UI
+
+## Setup Instructions
+1. Clone the repo
+2. Run `npm install`
+3. Start development server with `npm run dev`
+
+## License
+MIT License
